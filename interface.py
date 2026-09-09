@@ -1,5 +1,5 @@
 import customtkinter as ctk
-
+import sqlite3
 # Configuração da aparência
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -76,15 +76,7 @@ def tela_cliente():
         width=430,
         height=40
     )
-    nome.pack(pady=(25, 8))
-
-    cpf = ctk.CTkEntry(
-        formulario,
-        placeholder_text="CPF *",
-        width=430,
-        height=40
-    )
-    cpf.pack(pady=8)
+    nome.pack(pady=(40, 8))
 
     telefone = ctk.CTkEntry(
         formulario,
@@ -94,13 +86,13 @@ def tela_cliente():
     )
     telefone.pack(pady=8)
 
-    email = ctk.CTkEntry(
+    endereco = ctk.CTkEntry(
         formulario,
-        placeholder_text="E-mail",
+        placeholder_text="Endereço *",
         width=430,
         height=40
     )
-    email.pack(pady=8)
+    endereco.pack(pady=8)
 
     obrigatorios = ctk.CTkLabel(
         formulario,
@@ -116,19 +108,45 @@ def tela_cliente():
     mensagem.pack(pady=5)
 
     def validar_cliente():
-        if nome.get() == "" or cpf.get() == "" or telefone.get() == "":
+
+        nome_valor = nome.get().strip()
+        telefone_valor = telefone.get().strip()
+        endereco_valor = endereco.get().strip()
+
+        if nome_valor == "" or telefone_valor == "" or endereco_valor == "":
             mensagem.configure(
-                text="⚠ Preencha Nome, CPF e Telefone."
+                text="⚠ Preencha Nome, Telefone e Endereço."
             )
-        else:
+            return
+
+        try:
+            conexao = sqlite3.connect("oficina.db")
+            cursor = conexao.cursor()
+
+            cursor.execute("""
+                INSERT INTO clientes (nome, telefone, endereco)
+                VALUES (?, ?, ?)
+            """, (
+                nome_valor,
+                telefone_valor,
+                endereco_valor
+            ))
+
+            conexao.commit()
+            conexao.close()
+
             mensagem.configure(
                 text="✓ Cliente cadastrado com sucesso!"
             )
 
             nome.delete(0, "end")
-            cpf.delete(0, "end")
             telefone.delete(0, "end")
-            email.delete(0, "end")
+            endereco.delete(0, "end")
+
+        except sqlite3.Error as erro:
+            mensagem.configure(
+                text=f"⚠ Erro ao cadastrar cliente: {erro}"
+            )
 
     botao_cadastrar = ctk.CTkButton(
         formulario,
