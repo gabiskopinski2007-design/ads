@@ -1,5 +1,8 @@
 import customtkinter as ctk
 import sqlite3
+import clientes
+import veiculos
+import servicos
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -82,31 +85,22 @@ def tela_cliente():
         telefone_valor = telefone.get().strip()
         endereco_valor = endereco.get().strip()
 
-        if not nome_valor or not telefone_valor or not endereco_valor:
+        if nome_valor == "" or telefone_valor == "" or endereco_valor == "":
             mensagem.configure(
                 text="⚠ Preencha Nome, Telefone e Endereço."
             )
             return
 
         try:
-            conexao = sqlite3.connect("oficina.db")
-            cursor = conexao.cursor()
-
-            cursor.execute(
-                """
-                INSERT INTO clientes (nome, telefone, endereco)
-                VALUES (?, ?, ?)
-                """,
-                (nome_valor, telefone_valor, endereco_valor)
-            )
-
-            conexao.commit()
-            conexao.close()
+            clientes.cadastrar_cliente(nome_valor, telefone_valor, endereco_valor)
 
             mensagem.configure(
                 text="✓ Cliente cadastrado com sucesso!"
             )
-            limpar_campos(nome, telefone, endereco)
+
+            nome.delete(0, "end")
+            telefone.delete(0, "end")
+            endereco.delete(0, "end")
 
         except sqlite3.Error as erro:
             mensagem.configure(
@@ -157,26 +151,19 @@ def tela_servico():
             quilometros_numero = int(quilometros_valor)
             valor_numero = float(valor_valor) if valor_valor else 0
 
-            conexao = sqlite3.connect("oficina.db")
-            cursor = conexao.cursor()
+            try:
+                veiculo = veiculos.buscar_veiculo(veiculo_id_numero)
+                if veiculo is None:
+                    mensagem_servico.configure(
+                        text="⚠ Veículo não encontrado."
+                    )
+                    return None
 
-            cursor.execute(
-                """
-                INSERT INTO servicos
-                (descricao, valor, data, quilometros, veiculo_id)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    descricao_valor,
-                    valor_numero,
-                    data_valor,
-                    quilometros_numero,
-                    veiculo_id_numero
-                )
-            )
+            except sqlite3.Error as erro:
+                print(f"⚠ Erro ao buscar veículo: {erro}")
+                return None            
 
-            conexao.commit()
-            conexao.close()
+            servicos.cadastrar_servico(descricao_valor, valor_valor, data_valor, quilometros_valor, veiculo_id_numero)
 
             mensagem_servico.configure(
                 text="✓ Serviço registrado com sucesso!"
