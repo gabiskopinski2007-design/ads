@@ -1,1 +1,1 @@
-print ("python")
+import interface
