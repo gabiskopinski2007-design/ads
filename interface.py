@@ -1,10 +1,19 @@
 import customtkinter as ctk
 import sqlite3
-# Configuração da aparência
+
+
+# ==================================================
+# CONFIGURAÇÃO DA APARÊNCIA
+# ==================================================
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# Janela principal
+
+# ==================================================
+# JANELA PRINCIPAL
+# ==================================================
+
 janela = ctk.CTk()
 janela.title("SIGOA - Gestão de Oficina")
 janela.geometry("1000x650")
@@ -20,39 +29,11 @@ def limpar_conteudo():
 
 
 # ==================================================
-# TELA INICIAL
-# ==================================================
-
-def tela_inicial():
-    limpar_conteudo()
-
-    titulo = ctk.CTkLabel(
-        area_conteudo,
-        text="Bem-vindo ao SIGOA",
-        font=("Arial", 30, "bold")
-    )
-    titulo.pack(pady=(100, 15))
-
-    texto = ctk.CTkLabel(
-        area_conteudo,
-        text="Sistema Integrado de Gestão para Oficina Automotiva",
-        font=("Arial", 16)
-    )
-    texto.pack()
-
-    descricao = ctk.CTkLabel(
-        area_conteudo,
-        text="Utilize o menu ao lado para acessar as funcionalidades do sistema.",
-        font=("Arial", 14)
-    )
-    descricao.pack(pady=20)
-
-
-# ==================================================
 # TELA DE CADASTRO DE CLIENTE
 # ==================================================
 
 def tela_cliente():
+
     limpar_conteudo()
 
     titulo = ctk.CTkLabel(
@@ -70,6 +51,7 @@ def tela_cliente():
     formulario.pack()
     formulario.pack_propagate(False)
 
+    # Nome
     nome = ctk.CTkEntry(
         formulario,
         placeholder_text="Nome *",
@@ -78,6 +60,7 @@ def tela_cliente():
     )
     nome.pack(pady=(40, 8))
 
+    # Telefone
     telefone = ctk.CTkEntry(
         formulario,
         placeholder_text="Telefone *",
@@ -86,6 +69,7 @@ def tela_cliente():
     )
     telefone.pack(pady=8)
 
+    # Endereço
     endereco = ctk.CTkEntry(
         formulario,
         placeholder_text="Endereço *",
@@ -107,19 +91,28 @@ def tela_cliente():
     )
     mensagem.pack(pady=5)
 
+    # ==================================================
+    # FUNÇÃO PARA CADASTRAR CLIENTE
+    # ==================================================
+
     def validar_cliente():
 
         nome_valor = nome.get().strip()
         telefone_valor = telefone.get().strip()
         endereco_valor = endereco.get().strip()
 
-        if nome_valor == "" or telefone_valor == "" or endereco_valor == "":
+        if (
+            nome_valor == ""
+            or telefone_valor == ""
+            or endereco_valor == ""
+        ):
             mensagem.configure(
                 text="⚠ Preencha Nome, Telefone e Endereço."
             )
             return
 
         try:
+
             conexao = sqlite3.connect("oficina.db")
             cursor = conexao.cursor()
 
@@ -139,15 +132,18 @@ def tela_cliente():
                 text="✓ Cliente cadastrado com sucesso!"
             )
 
+            # Limpar campos
             nome.delete(0, "end")
             telefone.delete(0, "end")
             endereco.delete(0, "end")
 
         except sqlite3.Error as erro:
+
             mensagem.configure(
                 text=f"⚠ Erro ao cadastrar cliente: {erro}"
             )
 
+    # Botão
     botao_cadastrar = ctk.CTkButton(
         formulario,
         text="Cadastrar Cliente",
@@ -163,6 +159,7 @@ def tela_cliente():
 # ==================================================
 
 def tela_servico():
+
     limpar_conteudo()
 
     titulo = ctk.CTkLabel(
@@ -180,14 +177,16 @@ def tela_servico():
     formulario.pack()
     formulario.pack_propagate(False)
 
-    veiculo = ctk.CTkEntry(
+    # ID do veículo
+    veiculo_id = ctk.CTkEntry(
         formulario,
-        placeholder_text="Veículo *",
+        placeholder_text="ID do veículo *",
         width=450,
         height=40
     )
-    veiculo.pack(pady=(25, 8))
+    veiculo_id.pack(pady=(25, 8))
 
+    # Descrição
     descricao = ctk.CTkEntry(
         formulario,
         placeholder_text="Descrição do serviço *",
@@ -196,14 +195,7 @@ def tela_servico():
     )
     descricao.pack(pady=8)
 
-    pecas = ctk.CTkEntry(
-        formulario,
-        placeholder_text="Peças utilizadas",
-        width=450,
-        height=40
-    )
-    pecas.pack(pady=8)
-
+    # Valor
     valor = ctk.CTkEntry(
         formulario,
         placeholder_text="Valor do serviço",
@@ -212,18 +204,23 @@ def tela_servico():
     )
     valor.pack(pady=8)
 
-    status = ctk.CTkComboBox(
+    # Data
+    data = ctk.CTkEntry(
         formulario,
-        values=[
-            "Aguardando",
-            "Em andamento",
-            "Concluído"
-        ],
+        placeholder_text="Data de entrada *",
         width=450,
         height=40
     )
-    status.set("Selecione o status")
-    status.pack(pady=8)
+    data.pack(pady=8)
+
+    # Quilometragem
+    quilometros = ctk.CTkEntry(
+        formulario,
+        placeholder_text="Quilometragem *",
+        width=450,
+        height=40
+    )
+    quilometros.pack(pady=8)
 
     mensagem_servico = ctk.CTkLabel(
         formulario,
@@ -232,22 +229,85 @@ def tela_servico():
     )
     mensagem_servico.pack(pady=5)
 
+    # ==================================================
+    # FUNÇÃO PARA REGISTRAR SERVIÇO
+    # ==================================================
+
     def validar_servico():
-        if veiculo.get() == "" or descricao.get() == "":
+
+        veiculo_id_valor = veiculo_id.get().strip()
+        descricao_valor = descricao.get().strip()
+        valor_valor = valor.get().strip()
+        data_valor = data.get().strip()
+        quilometros_valor = quilometros.get().strip()
+
+        # Verificar campos obrigatórios
+        if (
+            veiculo_id_valor == ""
+            or descricao_valor == ""
+            or data_valor == ""
+            or quilometros_valor == ""
+        ):
             mensagem_servico.configure(
-                text="⚠ Preencha o veículo e a descrição do serviço."
+                text="⚠ Preencha os campos obrigatórios."
             )
-        else:
+            return
+
+        try:
+
+            # Converter números
+            veiculo_id_numero = int(veiculo_id_valor)
+            quilometros_numero = int(quilometros_valor)
+
+            if valor_valor == "":
+                valor_numero = 0
+            else:
+                valor_numero = float(valor_valor)
+
+            # Conectar ao banco
+            conexao = sqlite3.connect("oficina.db")
+            cursor = conexao.cursor()
+
+            # Inserir serviço
+            cursor.execute("""
+                INSERT INTO servicos
+                (descricao, valor, data, quilometros, veiculo_id)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                descricao_valor,
+                valor_numero,
+                data_valor,
+                quilometros_numero,
+                veiculo_id_numero
+            ))
+
+            conexao.commit()
+            conexao.close()
+
             mensagem_servico.configure(
                 text="✓ Serviço registrado com sucesso!"
             )
 
-            veiculo.delete(0, "end")
+            # Limpar campos
+            veiculo_id.delete(0, "end")
             descricao.delete(0, "end")
-            pecas.delete(0, "end")
             valor.delete(0, "end")
-            status.set("Selecione o status")
+            data.delete(0, "end")
+            quilometros.delete(0, "end")
 
+        except ValueError:
+
+            mensagem_servico.configure(
+                text="⚠ ID do veículo, valor e quilometragem devem ser números."
+            )
+
+        except sqlite3.Error as erro:
+
+            mensagem_servico.configure(
+                text=f"⚠ Erro ao registrar serviço: {erro}"
+            )
+
+    # Botão
     botao_registrar = ctk.CTkButton(
         formulario,
         text="Registrar Serviço",
@@ -270,6 +330,8 @@ menu = ctk.CTkFrame(
 menu.pack(side="left", fill="y")
 menu.pack_propagate(False)
 
+
+# Logo
 logo = ctk.CTkLabel(
     menu,
     text="SIGOA",
@@ -277,6 +339,8 @@ logo = ctk.CTkLabel(
 )
 logo.pack(pady=(40, 5))
 
+
+# Subtítulo
 subtitulo = ctk.CTkLabel(
     menu,
     text="Gestão de Oficina",
@@ -284,14 +348,10 @@ subtitulo = ctk.CTkLabel(
 )
 subtitulo.pack(pady=(0, 40))
 
-botao_inicio = ctk.CTkButton(
-    menu,
-    text="Início",
-    width=180,
-    height=45,
-    command=tela_inicial
-)
-botao_inicio.pack(pady=10)
+
+# ==================================================
+# BOTÃO CLIENTES
+# ==================================================
 
 botao_clientes = ctk.CTkButton(
     menu,
@@ -302,6 +362,11 @@ botao_clientes = ctk.CTkButton(
 )
 botao_clientes.pack(pady=10)
 
+
+# ==================================================
+# BOTÃO SERVIÇOS
+# ==================================================
+
 botao_servicos = ctk.CTkButton(
     menu,
     text="Serviços",
@@ -310,6 +375,11 @@ botao_servicos = ctk.CTkButton(
     command=tela_servico
 )
 botao_servicos.pack(pady=10)
+
+
+# ==================================================
+# BOTÃO SAIR
+# ==================================================
 
 botao_sair = ctk.CTkButton(
     menu,
@@ -336,8 +406,16 @@ area_conteudo.pack(
     fill="both"
 )
 
-# Mostrar tela inicial
-tela_inicial()
 
-# Iniciar programa
+# ==================================================
+# ABRIR CADASTRO DE CLIENTE AO INICIAR
+# ==================================================
+
+tela_cliente()
+
+
+# ==================================================
+# INICIAR PROGRAMA
+# ==================================================
+
 janela.mainloop()
