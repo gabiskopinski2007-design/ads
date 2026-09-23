@@ -168,11 +168,11 @@ def excluir_veiculo(id):
             cursor = conexao.cursor()
 
             sql = """
-                DELETE FROM veiculo
-                WHERE id = ?
-            """
+            DELETE FROM veiculos
+            WHERE id = ?
+    """
 
-            cursor.execute(sql, id)
+            cursor.execute(sql, (id,))
 
             conexao.commit()
 

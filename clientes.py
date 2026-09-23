@@ -151,7 +151,7 @@ def atualizar_cliente(id, nome, telefone, endereco):
                 UPDATE clientes
                 SET nome = ?,
                     telefone = ?,
-                    endereco = ?,
+                    endereco = ?
                 WHERE id = ?
             """
 
