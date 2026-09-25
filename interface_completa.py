@@ -3,6 +3,8 @@ import sqlite3
 import clientes
 import veiculos
 import servicos
+import pecas
+import orcamentos
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -349,9 +351,7 @@ def tela_peca():
             if not n or not q or not v or not fo:
                 msg.configure(text="⚠ Preencha todos os campos.")
                 return
-            with conectar() as con:
-                con.execute("INSERT INTO pecas (nome, quantidade, valor, fornecedor) VALUES (?, ?, ?, ?)",
-                            (n, int(q), float(v.replace(",", ".")), fo))
+            pecas.cadastrar_peca(n, int(q), float(v.replace(",", ".")), fo)
             msg.configure(text="✓ Peça cadastrada com sucesso!")
             limpar_campos(nome, quantidade, valor, fornecedor)
         except Exception as erro:
@@ -379,9 +379,7 @@ def tela_orcamento():
             if veiculos.buscar_veiculo(vi_num) is None:
                 msg.configure(text="⚠ Veículo não encontrado.")
                 return
-            with conectar() as con:
-                con.execute("INSERT INTO orcamentos (data, valor_total, veiculo_id) VALUES (?, ?, ?)",
-                            (dt, float(v.replace(",", ".")), vi_num))
+            orcamentos.cadastrar_orcamento(dt, float(v.replace(",", ".")), vi_num)
             msg.configure(text="✓ Orçamento cadastrado com sucesso!")
             limpar_campos(data, valor_total, veiculo_id)
         except Exception as erro:
@@ -399,15 +397,8 @@ def tela_consulta_geral():
 
     def consultar():
         try:
-            with conectar() as con:
-                linhas = con.execute("""
-                    SELECT o.id, o.data, o.valor_total, v.id, v.placa, c.nome
-                    FROM orcamentos o
-                    JOIN veiculos v ON v.id = o.veiculo_id
-                    JOIN clientes c ON c.id = v.cliente_id
-                    ORDER BY o.id
-                """).fetchall()
-            preencher_resultado(caixa, linhas)
+            orcamentos_list = orcamentos.listar_orcamentos()
+            preencher_resultado(caixa, orcamentos_list)
             msg.configure(text="")
         except Exception as erro:
             msg.configure(text=f"⚠ Erro na consulta: {erro}")
