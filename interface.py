@@ -3,29 +3,15 @@ import sqlite3
 import clientes
 import veiculos
 import servicos
+import pecas
+import orcamentos
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# --- PALETA SIGOA ---
-BG = "#F5F3FF"
-SIDEBAR = "#29256F"
-SIDEBAR_HOVER = "#5146C8"
-PRIMARY = "#5B50D6"
-PRIMARY_HOVER = "#473DB7"
-CARD = "#FFFFFF"
-TEXT = "#17153B"
-MUTED = "#77738F"
-BORDER = "#E7E3F5"
-SOFT = "#EFECFF"
-SUCCESS = "#22A06B"
-DANGER = "#D94B59"
-
 janela = ctk.CTk()
 janela.title("SIGOA - Gestão de Oficina")
-janela.geometry("1360x820")
-janela.minsize(1180, 700)
-janela.configure(fg_color=BG)
+janela.geometry("1100x700")
 
 
 def conectar():
@@ -38,41 +24,29 @@ def limpar_conteudo():
 
 
 def titulo(texto):
-    cab = ctk.CTkFrame(area_conteudo, fg_color="transparent")
-    cab.pack(fill="x", padx=30, pady=(25, 12))
-    ctk.CTkLabel(cab, text=texto, font=("Segoe UI", 27, "bold"),
-                 text_color=TEXT, anchor="w").pack(fill="x")
-    ctk.CTkLabel(cab, text="Gerencie as informações da oficina de forma simples e eficiente.",
-                 font=("Segoe UI", 12), text_color=MUTED, anchor="w").pack(fill="x", pady=(3,0))
+    ctk.CTkLabel(area_conteudo, text=texto, font=("Arial", 26, "bold")).pack(pady=(22, 12))
 
 
 def formulario(altura=560):
-    frame = ctk.CTkScrollableFrame(area_conteudo, width=760, height=altura,
-                                   fg_color=CARD, corner_radius=18,
-                                   border_width=1, border_color=BORDER)
-    frame.pack(padx=30, pady=(4, 28), fill="both", expand=True)
+    frame = ctk.CTkScrollableFrame(area_conteudo, width=700, height=altura)
+    frame.pack(padx=20, pady=5, fill="both", expand=True)
     return frame
 
 
 def campo(pai, texto, largura=500):
-    item = ctk.CTkEntry(pai, placeholder_text=texto, width=largura, height=44,
-                        corner_radius=10, border_color=BORDER, fg_color="#FAF9FF",
-                        text_color=TEXT, placeholder_text_color="#9B97AE",
-                        font=("Segoe UI", 13))
-    item.pack(pady=7)
+    item = ctk.CTkEntry(pai, placeholder_text=texto, width=largura, height=38)
+    item.pack(pady=6)
     return item
 
 
 def botao(pai, texto, comando, largura=210):
-    item = ctk.CTkButton(pai, text=texto, command=comando, width=largura, height=42,
-                         corner_radius=10, fg_color=PRIMARY, hover_color=PRIMARY_HOVER,
-                         font=("Segoe UI", 13, "bold"))
-    item.pack(pady=8)
+    item = ctk.CTkButton(pai, text=texto, command=comando, width=largura, height=38)
+    item.pack(pady=7)
     return item
 
 
 def mensagem(pai):
-    item = ctk.CTkLabel(pai, text="", font=("Segoe UI", 12), text_color=MUTED)
+    item = ctk.CTkLabel(pai, text="", font=("Arial", 13))
     item.pack(pady=5)
     return item
 
@@ -83,12 +57,9 @@ def limpar_campos(*campos):
 
 
 def tabela_texto(pai, cabecalho):
-    ctk.CTkLabel(pai, text=cabecalho, font=("Consolas", 12, "bold"),
-                 text_color=TEXT, anchor="w").pack(fill="x", padx=18, pady=(12, 4))
-    caixa = ctk.CTkTextbox(pai, width=680, height=220, font=("Consolas", 12),
-                           fg_color="#FAF9FF", text_color=TEXT, corner_radius=10,
-                           border_width=1, border_color=BORDER)
-    caixa.pack(padx=18, pady=(0, 10), fill="both", expand=True)
+    ctk.CTkLabel(pai, text=cabecalho, font=("Courier New", 13, "bold"), anchor="w").pack(fill="x", padx=15, pady=(10, 2))
+    caixa = ctk.CTkTextbox(pai, width=680, height=220, font=("Courier New", 13))
+    caixa.pack(padx=15, pady=5, fill="both", expand=True)
     return caixa
 
 
@@ -380,9 +351,7 @@ def tela_peca():
             if not n or not q or not v or not fo:
                 msg.configure(text="⚠ Preencha todos os campos.")
                 return
-            with conectar() as con:
-                con.execute("INSERT INTO pecas (nome, quantidade, valor, fornecedor) VALUES (?, ?, ?, ?)",
-                            (n, int(q), float(v.replace(",", ".")), fo))
+            pecas.cadastrar_peca(n, int(q), float(v.replace(",", ".")), fo)
             msg.configure(text="✓ Peça cadastrada com sucesso!")
             limpar_campos(nome, quantidade, valor, fornecedor)
         except Exception as erro:
@@ -410,9 +379,7 @@ def tela_orcamento():
             if veiculos.buscar_veiculo(vi_num) is None:
                 msg.configure(text="⚠ Veículo não encontrado.")
                 return
-            with conectar() as con:
-                con.execute("INSERT INTO orcamentos (data, valor_total, veiculo_id) VALUES (?, ?, ?)",
-                            (dt, float(v.replace(",", ".")), vi_num))
+            orcamentos.cadastrar_orcamento(dt, float(v.replace(",", ".")), vi_num)
             msg.configure(text="✓ Orçamento cadastrado com sucesso!")
             limpar_campos(data, valor_total, veiculo_id)
         except Exception as erro:
@@ -430,15 +397,8 @@ def tela_consulta_geral():
 
     def consultar():
         try:
-            with conectar() as con:
-                linhas = con.execute("""
-                    SELECT o.id, o.data, o.valor_total, v.id, v.placa, c.nome
-                    FROM orcamentos o
-                    JOIN veiculos v ON v.id = o.veiculo_id
-                    JOIN clientes c ON c.id = v.cliente_id
-                    ORDER BY o.id
-                """).fetchall()
-            preencher_resultado(caixa, linhas)
+            orcamentos_list = orcamentos.listar_orcamentos()
+            preencher_resultado(caixa, orcamentos_list)
             msg.configure(text="")
         except Exception as erro:
             msg.configure(text=f"⚠ Erro na consulta: {erro}")
@@ -446,151 +406,34 @@ def tela_consulta_geral():
     botao(f, "Consultar Orçamentos", consultar)
 
 
-# MENU / DASHBOARD
-menu = ctk.CTkScrollableFrame(janela, width=235, corner_radius=0, fg_color=SIDEBAR)
+# MENU
+menu = ctk.CTkScrollableFrame(janela, width=230, corner_radius=0)
 menu.pack(side="left", fill="y")
+ctk.CTkLabel(menu, text="SIGOA", font=("Arial", 30, "bold")).pack(pady=(25, 2))
+ctk.CTkLabel(menu, text="Gestão de Oficina", font=("Arial", 14)).pack(pady=(0, 20))
 
-logo = ctk.CTkFrame(menu, fg_color="transparent")
-logo.pack(fill="x", padx=18, pady=(25, 18))
-ctk.CTkLabel(logo, text="🚘  SIGOA", font=("Segoe UI", 28, "bold"),
-             text_color="white").pack(anchor="w")
-ctk.CTkLabel(logo, text="Gestão de Oficina", font=("Segoe UI", 12),
-             text_color="#C9C5F2").pack(anchor="w", padx=4)
+opcoes = (
+    ("Cadastrar Cliente", tela_cliente),
+    ("Consultar Clientes", tela_consultar_clientes),
+    ("Editar Clientes", tela_editar_cliente),
+    ("Cadastrar Veículo", tela_veiculo),
+    ("Consultar Veículos", tela_consultar_veiculos),
+    ("Editar Veículos", tela_editar_veiculo),
+    ("Registrar Serviço", tela_servico),
+    ("Consultar Serviços", tela_consultar_servicos),
+    ("Editar Serviços", tela_editar_servico),
+    ("Cadastrar Peça", tela_peca),
+    ("Cadastrar Orçamento", tela_orcamento),
+    ("Consultar Orçamentos", tela_consulta_geral),
+)
 
-def menu_secao(texto):
-    ctk.CTkLabel(menu, text=texto.upper(), font=("Segoe UI", 10, "bold"),
-                 text_color="#B7B2E3").pack(anchor="w", padx=22, pady=(13, 4))
+for texto, comando in opcoes:
+    ctk.CTkButton(menu, text=texto, width=190, height=36, command=comando).pack(pady=4)
 
-def menu_btn(texto, comando):
-    ctk.CTkButton(menu, text=texto, command=comando, width=200, height=35,
-                  anchor="w", corner_radius=9, fg_color="transparent",
-                  hover_color=SIDEBAR_HOVER, text_color="white",
-                  font=("Segoe UI", 12)).pack(padx=12, pady=2)
+ctk.CTkButton(menu, text="Sair", width=190, height=36, command=janela.destroy).pack(pady=20)
 
-area_conteudo = ctk.CTkFrame(janela, corner_radius=0, fg_color=BG)
+area_conteudo = ctk.CTkFrame(janela, corner_radius=0, fg_color="transparent")
 area_conteudo.pack(side="right", expand=True, fill="both")
 
-def consultar_contagem(tabela):
-    try:
-        con = conectar()
-        cur = con.cursor()
-        cur.execute(f"SELECT COUNT(*) FROM {tabela}")
-        valor = cur.fetchone()[0]
-        con.close()
-        return valor
-    except Exception:
-        return 0
-
-def card_dashboard(pai, titulo_card, valor, icone):
-    card = ctk.CTkFrame(pai, fg_color=CARD, corner_radius=17,
-                        border_width=1, border_color=BORDER)
-    card.grid_columnconfigure(1, weight=1)
-    ctk.CTkLabel(card, text=icone, width=48, height=48, corner_radius=24,
-                 fg_color=SOFT, text_color=PRIMARY,
-                 font=("Segoe UI Emoji", 22)).grid(row=0, column=0, rowspan=2, padx=(18,12), pady=18)
-    ctk.CTkLabel(card, text=titulo_card, font=("Segoe UI", 12),
-                 text_color=MUTED, anchor="w").grid(row=0, column=1, sticky="sw", pady=(14,0))
-    ctk.CTkLabel(card, text=str(valor), font=("Segoe UI", 25, "bold"),
-                 text_color=TEXT, anchor="w").grid(row=1, column=1, sticky="nw", pady=(0,14))
-    return card
-
-def tela_inicio():
-    limpar_conteudo()
-
-    cab = ctk.CTkFrame(area_conteudo, fg_color="transparent")
-    cab.pack(fill="x", padx=30, pady=(25, 14))
-    esquerda = ctk.CTkFrame(cab, fg_color="transparent")
-    esquerda.pack(side="left", fill="x", expand=True)
-    ctk.CTkLabel(esquerda, text="Bem-vindo ao SIGOA! 👋",
-                 font=("Segoe UI", 28, "bold"), text_color=TEXT).pack(anchor="w")
-    ctk.CTkLabel(esquerda, text="Aqui você gerencia sua oficina de forma simples e eficiente.",
-                 font=("Segoe UI", 12), text_color=MUTED).pack(anchor="w", pady=(3,0))
-    ctk.CTkEntry(cab, placeholder_text="⌕  Buscar no sistema...", width=285, height=40,
-                 corner_radius=20, fg_color=CARD, border_color=BORDER).pack(side="right", padx=(12,0))
-
-    cards = ctk.CTkFrame(area_conteudo, fg_color="transparent")
-    cards.pack(fill="x", padx=30, pady=(0,14))
-    for i in range(4):
-        cards.grid_columnconfigure(i, weight=1)
-
-    dados = [
-        ("Total de Clientes", consultar_contagem("clientes"), "👥"),
-        ("Total de Veículos", consultar_contagem("veiculos"), "🚗"),
-        ("Serviços", consultar_contagem("servicos"), "🔧"),
-        ("Orçamentos", consultar_contagem("orcamentos"), "📋"),
-    ]
-    for i, (nome, valor, icone) in enumerate(dados):
-        card_dashboard(cards, nome, valor, icone).grid(row=0, column=i, sticky="nsew",
-                                                       padx=(0 if i == 0 else 6, 0 if i == 3 else 6))
-
-    corpo = ctk.CTkFrame(area_conteudo, fg_color="transparent")
-    corpo.pack(fill="both", expand=True, padx=30, pady=(0,28))
-    corpo.grid_columnconfigure(0, weight=2)
-    corpo.grid_columnconfigure(1, weight=1)
-    corpo.grid_rowconfigure(0, weight=1)
-
-    painel = ctk.CTkFrame(corpo, fg_color=CARD, corner_radius=18,
-                          border_width=1, border_color=BORDER)
-    painel.grid(row=0, column=0, sticky="nsew", padx=(0,7))
-    ctk.CTkLabel(painel, text="Acesso rápido", font=("Segoe UI", 18, "bold"),
-                 text_color=TEXT).pack(anchor="w", padx=22, pady=(20,4))
-    ctk.CTkLabel(painel, text="Escolha uma operação para começar.",
-                 font=("Segoe UI", 12), text_color=MUTED).pack(anchor="w", padx=22)
-
-    grade = ctk.CTkFrame(painel, fg_color="transparent")
-    grade.pack(fill="both", expand=True, padx=18, pady=18)
-    grade.grid_columnconfigure((0,1), weight=1)
-
-    atalhos = [
-        ("👤  Cadastrar cliente", tela_cliente),
-        ("🚗  Cadastrar veículo", tela_veiculo),
-        ("🔧  Registrar serviço", tela_servico),
-        ("📋  Novo orçamento", tela_orcamento),
-        ("🔎  Consultar clientes", tela_consultar_clientes),
-        ("📊  Consultar orçamentos", tela_consulta_geral),
-    ]
-    for i, (nome, cmd) in enumerate(atalhos):
-        ctk.CTkButton(grade, text=nome, command=cmd, height=58, anchor="w",
-                      corner_radius=12, fg_color="#FAF9FF", hover_color=SOFT,
-                      text_color=TEXT, border_width=1, border_color=BORDER,
-                      font=("Segoe UI", 13, "bold")).grid(row=i//2, column=i%2,
-                                                         sticky="ew", padx=6, pady=6)
-
-    resumo = ctk.CTkFrame(corpo, fg_color=CARD, corner_radius=18,
-                          border_width=1, border_color=BORDER)
-    resumo.grid(row=0, column=1, sticky="nsew", padx=(7,0))
-    ctk.CTkLabel(resumo, text="Sistema", font=("Segoe UI", 18, "bold"),
-                 text_color=TEXT).pack(anchor="w", padx=22, pady=(20,4))
-    ctk.CTkLabel(resumo, text="SIGOA • Gestão de Oficina",
-                 font=("Segoe UI", 12), text_color=MUTED).pack(anchor="w", padx=22)
-    ctk.CTkFrame(resumo, height=2, fg_color=BORDER).pack(fill="x", padx=22, pady=18)
-    ctk.CTkLabel(resumo, text="Clientes  •  Veículos\nServiços  •  Peças\nOrçamentos",
-                 justify="left", font=("Segoe UI", 14), text_color=TEXT).pack(anchor="w", padx=22)
-    ctk.CTkLabel(resumo, text="\nTodos os módulos continuam ligados\nao mesmo banco de dados do projeto.",
-                 justify="left", font=("Segoe UI", 11), text_color=MUTED).pack(anchor="w", padx=22)
-
-menu_btn("⌂   Início", tela_inicio)
-menu_secao("Clientes")
-menu_btn("＋   Cadastrar", tela_cliente)
-menu_btn("⌕   Consultar", tela_consultar_clientes)
-menu_btn("✎   Editar", tela_editar_cliente)
-menu_secao("Veículos")
-menu_btn("＋   Cadastrar", tela_veiculo)
-menu_btn("⌕   Consultar", tela_consultar_veiculos)
-menu_btn("✎   Editar", tela_editar_veiculo)
-menu_secao("Serviços")
-menu_btn("＋   Registrar", tela_servico)
-menu_btn("⌕   Consultar", tela_consultar_servicos)
-menu_btn("✎   Editar", tela_editar_servico)
-menu_secao("Estoque")
-menu_btn("▣   Peças", tela_peca)
-menu_secao("Orçamentos")
-menu_btn("＋   Cadastrar", tela_orcamento)
-menu_btn("⌕   Consultar", tela_consulta_geral)
-
-ctk.CTkButton(menu, text="Sair", command=janela.destroy, width=200, height=38,
-              corner_radius=9, fg_color="#443B9F", hover_color="#5A4ED0",
-              font=("Segoe UI", 12, "bold")).pack(padx=12, pady=(25,20))
-
-tela_inicio()
+tela_cliente()
 janela.mainloop()
