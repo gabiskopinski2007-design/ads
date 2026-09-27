@@ -168,9 +168,9 @@ def excluir_veiculo(id):
             cursor = conexao.cursor()
 
             sql = """
-            DELETE FROM veiculos
-            WHERE id = ?
-    """
+                DELETE FROM veiculos
+                WHERE id = ?
+            """
 
             cursor.execute(sql, (id,))
 
@@ -187,4 +187,3 @@ def excluir_veiculo(id):
         finally:
             cursor.close()
             conexao.close()
-
